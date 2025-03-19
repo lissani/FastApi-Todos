@@ -34,10 +34,25 @@
 
                 // 제목과 설명을 담을 span 요소 추가
                 const titleSpan = document.createElement('span');
-                titleSpan.textContent = todo.title;
+                titleSpan.textContent = `${todo.title}`;
                 const descriptionSpan = document.createElement('span');
                 descriptionSpan.textContent = ` - ${todo.description}`;
+
+                // 완료 상태를 표시하는 span
+                const completedSpan = document.createElement('span');
+                completedSpan.textContent = ` (Completed: ${todo.completed})`;
+                completedSpan.style.marginLeft = '10px';
                 
+                //완료 버튼
+                const completeButton = document.createElement('button');
+                completeButton.textContent = todo.completed ? 'Undo':'Complete';
+                completeButton.onclick = async () => {
+                    await fetch(`/todos/${todo.id}/complete`,{
+                        method: 'PUT'
+                    });
+                    fetchTodos();
+                };
+
                 //수정 버튼
                 const editButton = document.createElement('button');
                 editButton.textContent = 'Edit';
@@ -45,6 +60,7 @@
                     // 기존 요소 숨기기
                     titleSpan.style.display = 'none';
                     descriptionSpan.style.display = 'none';
+                    completedSpan.style.display = 'none';
                     editButton.style.display = 'none';
 
                     // 입력 필드 추가
@@ -83,8 +99,11 @@
                 deleteButton.textContent = 'Delete';
                 deleteButton.onclick = () => deleteTodo(todo.id)
 
+                //목록에 추가
                 li.appendChild(titleSpan);
                 li.appendChild(descriptionSpan);
+                li.appendChild(completedSpan);
+                li.appendChild(completeButton);
                 li.appendChild(editButton);
                 li.appendChild(deleteButton);
                 todoList.appendChild(li);

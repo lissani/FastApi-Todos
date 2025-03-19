@@ -82,6 +82,17 @@ def delete_todo(todo_id: int):
     save_todos(todos)
     return {"message": "To-Do item deleted"}
 
+# 특정 to-do 항목의 완료 여부 변경
+@app.put("/todos/{todo_id}/complete", response_model=TodoItem)
+def toggle_complete(todo_id: int):
+    todos = load_todos()
+    for todo in todos:
+        if todo["id"] == todo_id:
+            todo["completed"]=not todo["completed"]
+            save_todos(todos)
+            return todo
+    raise HTTPException(status_code=404, detail="To-Do item not found")
+
 # HTML 파일 서빙
 @app.get("/", response_class=HTMLResponse)
 def read_root():
