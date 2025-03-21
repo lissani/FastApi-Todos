@@ -21,7 +21,7 @@ jobs:
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> /home/runner/.ssh/known_hosts
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd /home/${{ secrets.SSH_USER }}/your-fastapi-app  # FastAPI 프로젝트 경로
+            cd /home/${{ secrets.SSH_USER }}/your-fastapi-app  
             
             # 최신 코드 가져오기
             git pull origin main
