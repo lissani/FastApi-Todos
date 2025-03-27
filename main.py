@@ -9,11 +9,13 @@ FastAPI를 활용해 CRUD(Create, Read, Update, Delete) 엔드포인트를 제�
 루트 엔드포인트(`/`)에서는 HTML 파일을 읽어 브라우저에 서빙
 '''
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from typing import Optional
 import json
 import os
+from datetime import datetime
 
 app = FastAPI()
 
@@ -23,6 +25,7 @@ class TodoItem(BaseModel):
     title: str
     description: str
     completed: bool
+    due_date: Optional[str] = None
 
 # JSON 파일 경로
 TODO_FILE = "todo.json"
@@ -45,6 +48,15 @@ def save_todos(todos):
     with open(TODO_FILE, "w",encoding="utf-8") as file:
         json.dump(todos, file, indent=4)
 
+# 날짜를 기준으로 todo를 정렬하는 함수
+def sort_todos_by_date(todos, ascending=True):
+    # 날짜가 없는 todo는 맨 뒤로 보내는 함수
+    def get_date_or_max(todo):
+        if not todo.get("due_date"):
+            return "9999-12-31" if ascending else ""
+        return todo["due_date"]
+    return sorted(todos, key=get_date_or_max, reverse=not ascending)
+
 # FastAPI 앱 시작 시 json 파일 초기화
 @app.on_event("startup")
 def startup_event():
@@ -52,8 +64,11 @@ def startup_event():
 
 # To-Do 목록 조회
 @app.get("/todos", response_model=list[TodoItem])
-def get_todos():
-    return load_todos()
+def get_todos(sort_by_date: bool = Query(False), ascending: bool = Query(True)):
+    todos = load_todos()
+    if sort_by_date:
+        todos = sort_todos_by_date(todos, ascending)
+    return todos
 
 # 신규 To-Do 항목 추가
 @app.post("/todos", response_model=TodoItem)
