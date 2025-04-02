@@ -65,6 +65,11 @@
         .sort-controls {
             margin-bottom: 15px;
         }
+        .todo-location{
+            color: #0066cc;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -86,6 +91,10 @@
         <div>
             <label for="description">설명:</label>
             <input type="text" id="description" placeholder="설명" required>
+        </div>
+        <div>
+            <label for="location">장소:</label>
+            <input type="text" id="location" placeholder="장소">
         </div>
         <div>
             <label for="due-date">기한:</label>
@@ -158,6 +167,15 @@
                 // 할 일 설명
                 const descriptionEl = document.createElement('p');
                 descriptionEl.textContent = todo.description;
+
+                // 장소 정보
+                const locationEl = document.createElement('p');
+                locationEl.className = 'todo-location';
+                if(todo.location){
+                    locationEl.textContent = `장소: ${todo.location}`;
+                } else{
+                    locationEl.textContent = '장소 미지정';
+                }
                 
                 // 상태 표시
                 const statusEl = document.createElement('p');
@@ -195,6 +213,7 @@
                                 id: todo.id,
                                 title: form.elements.title.value,
                                 description: form.elements.description.value,
+                                location: form.elements.location.value || null,
                                 due_date: form.elements.dueDate.value || null,
                                 completed: todo.completed
                             })
@@ -214,6 +233,13 @@
                     descInput.innerHTML = `
                         <label for="edit-desc-${todo.id}">설명:</label>
                         <input type="text" name="description" id="edit-desc-${todo.id}" value="${todo.description}" required>
+                    `;
+
+                    // 장소 입력 필드
+                    const locationInput = document.createElement('div');
+                    locationInput.innerHTML = `
+                        <label for="edit-location=${todo.id}">장소:</label>
+                        <input type="text" name="location" id="edit-location-${todo.id}" value="${todo.location || ''}">
                     `;
                     
                     // 기한 입력 필드
@@ -237,6 +263,7 @@
                     
                     form.appendChild(titleInput);
                     form.appendChild(descInput);
+                    form.appendChild(locationInput);
                     form.appendChild(dateInput);
                     form.appendChild(buttons);
                     
@@ -261,6 +288,7 @@
                 // 모든 요소를 할 일 항목에 추가
                 todoItem.appendChild(todoHeader);
                 todoItem.appendChild(descriptionEl);
+                todoItem.appendChild(locationEl);
                 todoItem.appendChild(statusEl);
                 todoItem.appendChild(actionsContainer);
                 
@@ -274,6 +302,7 @@
             event.preventDefault();
             const title = document.getElementById('title').value;
             const description = document.getElementById('description').value;
+            const location = document.getElementById('location').value;
             const dueDate = document.getElementById('due-date').value || null;
             
             const response = await fetch('/todos', {
@@ -285,6 +314,7 @@
                     id: Date.now(), 
                     title, 
                     description, 
+                    location,
                     completed: false,
                     due_date: dueDate
                 })
@@ -294,6 +324,7 @@
                 // 폼 초기화
                 document.getElementById('title').value = '';
                 document.getElementById('description').value = '';
+                document.getElementById('location').value='';
                 document.getElementById('due-date').value = '';
                 
                 // 목록 새로고침
