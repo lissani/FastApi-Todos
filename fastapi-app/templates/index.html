@@ -59,10 +59,35 @@
             margin-top: 5px;
             margin-bottom: 10px;
         }
+        body.dark-mode {
+            background-color: #121212;
+            color: #f0f0f0;
+        }
+        .dark-mode input,
+        .dark-mode button {
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            border: 1px solid #555;
+        }
+        .dark-mode .todo-item {
+            border-color: #444;
+            background-color: #1a1a1a;
+        }
+        .dark-mode .todo-location {
+            color: #6699ff;
+        }
+        .dark-mode .near-deadline {
+            background-color: #662222;
+        }
+        .dark-mode .overdue {
+            background-color: #884444;
+        }
+
     </style>
 </head>
 <body>
     <h1>P들을 위한 To-Do List</h1>
+    <button id="toggle-dark-mode">🌙 다크 모드 전환</button>
     <div class="sort-controls">
         <button id="sort-by-date">기한이 가까운 순으로 정렬</button>
         <button id="sort-by-date-desc">기한이 먼 순으로 정렬</button>
@@ -240,6 +265,17 @@
         document.getElementById('sort-by-date-desc').addEventListener('click', () => fetchTodos(true, false));
         document.getElementById('reset-sort').addEventListener('click', () => fetchTodos(false));
         fetchTodos();
+        // 초기 적용
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // 토글 버튼 이벤트
+        document.getElementById('toggle-dark-mode').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+        });
     </script>
 </body>
 </html>
