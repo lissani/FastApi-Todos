@@ -7,13 +7,13 @@ services:
       dockerfile: Dockerfile      # Dockerfile 이름 (생략 가능, 기본값은 'Dockerfile')
     container_name: FastApi-app
     ports:
-      - "5001:5001"
+      - "8000:8000"
 
   sonarqube:
     image: sonarqube:latest
     container_name: sonarqube
     ports:
-      - "9000:9000"
+      - "5002:9000"
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true  # 메모리 제한 환경에서 유용한 옵션
     volumes:
