@@ -20,8 +20,14 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()
 
+# Prometheus metrics 설정
+instrumentator = Instrumentator(
+    should_group_status_codes=True,
+    should_ignore_untemplated=False,  # 경로 템플릿 없더라도 기록
+    should_instrument=lambda request: True  # 모든 요청 기록
+)
 # Prometheus 메트릭스 엔드포인트 (/metrics)
-Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+Instrumentator().instrument(app).expose(app, include_in_schema=True)
 
 # To-Do 항목 모델
 class TodoItem(BaseModel):
