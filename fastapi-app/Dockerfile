@@ -7,6 +7,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
+COPY todo.json .
+
+# 파일 권한 조정 추가
+RUN chown appuser:appuser /app/todo.json
 
 # 비루트 유저 생성 및 전환
 RUN useradd -m appuser
