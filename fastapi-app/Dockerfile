@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
 COPY todo.json .
+COPY templates ./templates
 
 # 비루트 유저 생성 및 전환
 RUN useradd -m appuser
