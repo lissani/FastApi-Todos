@@ -23,8 +23,8 @@
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
           <collectionProp name="Arguments.arguments"/>
         </elementProp>
-        <stringProp name="HTTPSampler.domain">${BASE_URL}</stringProp>
-        <stringProp name="HTTPSampler.port"></stringProp>
+        <stringProp name="HTTPSampler.domain">${__BeanShell("${__P(BASE_URL)}".replace("http://", "").split(":")[0])}</stringProp>
+        <stringProp name="HTTPSampler.port">${__BeanShell("${__P(BASE_URL)}".split(":")[2])}</stringProp>
         <stringProp name="HTTPSampler.connect_timeout"></stringProp>
         <stringProp name="HTTPSampler.response_timeout"></stringProp>
         <stringProp name="HTTPSampler.protocol"></stringProp>
@@ -54,8 +54,8 @@
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <stringProp name="HTTPSampler.domain">${__BeanShell(${__BeanShell(vars.get("BASE_URL").replace("http://", "").split(":")[0])})}</stringProp>
-          <stringProp name="HTTPSampler.port">${__BeanShell(${__BeanShell(vars.get("BASE_URL").split(":")[2])})}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__BeanShell("${__P(BASE_URL)}".replace("http://", "").split(":")[0])}</stringProp>
+          <stringProp name="HTTPSampler.port">${__BeanShell("${__P(BASE_URL)}".split(":")[2])}</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.path">/</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
@@ -80,8 +80,8 @@
               </elementProp>
             </collectionProp>
           </elementProp>
-          <stringProp name="HTTPSampler.domain">${__BeanShell(${__BeanShell(vars.get("BASE_URL").replace("http://", "").split(":")[0])})}</stringProp>
-          <stringProp name="HTTPSampler.port">${__BeanShell(${__BeanShell(vars.get("BASE_URL").split(":")[2])})}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__BeanShell("${__P(BASE_URL)}".replace("http://", "").split(":")[0])}</stringProp>
+          <stringProp name="HTTPSampler.port">${__BeanShell("${__P(BASE_URL)}".split(":")[2])}</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.path">/users</stringProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -99,8 +99,8 @@
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <stringProp name="HTTPSampler.domain">${__BeanShell(${__BeanShell(vars.get("BASE_URL").replace("http://", "").split(":")[0])})}</stringProp>
-          <stringProp name="HTTPSampler.port">${__BeanShell(${__BeanShell(vars.get("BASE_URL").split(":")[2])})}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__BeanShell("${__P(BASE_URL)}".replace("http://", "").split(":")[0])}</stringProp>
+          <stringProp name="HTTPSampler.port">${__BeanShell("${__P(BASE_URL)}".split(":")[2])}</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.path">/users</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
