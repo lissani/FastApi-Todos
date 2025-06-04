@@ -95,15 +95,20 @@ def save_todos(todos):
 def sort_todos_by_date(todos, ascending=True):
     # 날짜가 없는 todo는 맨 뒤로 보내는 함수
     def get_date_or_max(todo):
-        if not todo.get("due_date"):
-            return "9999-12-31" if ascending else ""
-        return todo["due_date"]
+        due = todo.get("due_date")
+        if not due:
+            return datetime.max if ascending else datetime.min
+        try:
+            return datetime.strptime(due, "%Y=%m-%d")
+        except ValueError:
+            return datetime.max
     return sorted(todos, key=get_date_or_max, reverse=not ascending)
 
 # FastAPI 앱 시작 시 json 파일 초기화
 @app.on_event("startup")
 def startup_event():
-    reset_todo()
+    if not os.path.exists(TODO_FILE):
+        reset_todo()
 
 # To-Do 목록 조회
 @app.get("/todos", response_model=list[TodoItem])

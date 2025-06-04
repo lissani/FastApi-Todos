@@ -190,7 +190,45 @@
         const editButton = document.createElement('button');
         editButton.textContent = '수정';
         editButton.onclick = () => {
-          // 생략: 기존 코드 동일
+          todoItem.innerHTML = '';
+          const form = document.createElement('form');
+          form.onsubmit = async (e) => {
+            e.preventDefault();
+            await fetch(`/todos/${todo.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: todo.id,
+                title: form.elements.title.value,
+                description: form.elements.description.value,
+                location: form.elements.location.value || null,
+                category: form.elements.category.value || null,
+                due_date: form.elements.dueDate.value || null,
+                completed: todo.completed
+              })
+            });
+            fetchTodos(sortByDate, ascending);
+          };
+          const titleInput = document.createElement('div');
+          titleInput.innerHTML = `<label for="edit-title-${todo.id}">제목:</label><input type="text" name="title" id="edit-title-${todo.id}" value="${todo.title}" required>`;
+          const descInput = document.createElement('div');
+          descInput.innerHTML = `<label for="edit-desc-${todo.id}">설명:</label><input type="text" name="description" id="edit-desc-${todo.id}" value="${todo.description}" required>`;
+          const locationInput = document.createElement('div');
+          locationInput.innerHTML = `<label for="edit-location-${todo.id}">장소:</label><input type="text" name="location" id="edit-location-${todo.id}" value="${todo.location || ''}">`;
+          const categoryInput = document.createElement('div');
+          categoryInput.innerHTML = `<label for="edit-category-${todo.id}">카테고리:</label><input type="text" name="category" id="edit-category-${todo.id}" value="${todo.category || ''}">`;
+          const dateInput = document.createElement('div');
+          dateInput.innerHTML = `<label for="edit-date-${todo.id}">기한:</label><input type="date" name="dueDate" id="edit-date-${todo.id}" value="${todo.due_date || ''}">`;
+          const buttons = document.createElement('div');
+          buttons.innerHTML = `<button type="submit">저장</button><button type="button" id="cancel-edit-${todo.id}">취소</button>`;
+          buttons.querySelector(`#cancel-edit-${todo.id}`).onclick = () => fetchTodos(sortByDate, ascending);
+          form.appendChild(titleInput);
+          form.appendChild(descInput);
+          form.appendChild(locationInput);
+          form.appendChild(categoryInput);
+          form.appendChild(dateInput);
+          form.appendChild(buttons);
+          todoItem.appendChild(form);
         };
 
         const deleteButton = document.createElement('button');
