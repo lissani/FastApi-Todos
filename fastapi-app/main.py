@@ -99,7 +99,7 @@ def sort_todos_by_date(todos, ascending=True):
         if not due:
             return datetime.max if ascending else datetime.min
         try:
-            return datetime.strptime(due, "%Y=%m-%d")
+            return datetime.strptime(due, "%Y-%m-%d")
         except ValueError:
             return datetime.max
     return sorted(todos, key=get_date_or_max, reverse=not ascending)

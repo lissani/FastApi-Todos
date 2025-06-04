@@ -40,6 +40,8 @@
     }
     button {
       margin-right: 5px;
+      padding: 8px 12px;
+      cursor: pointer;
     }
     form {
       margin-bottom: 20px;
@@ -54,10 +56,36 @@
     .sort-controls {
       margin-bottom: 15px;
     }
+    .sort-controls button {
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+    }
+    .sort-controls button.active {
+      background-color: #007bff;
+      color: white;
+    }
     .todo-location {
       color: #0066cc;
       margin-top: 5px;
       margin-bottom: 10px;
+    }
+    .edit-form {
+      border: 2px solid #007bff;
+      padding: 15px;
+      border-radius: 5px;
+      background-color: #f8f9fa;
+    }
+    .edit-form div {
+      margin-bottom: 10px;
+    }
+    .edit-form label {
+      display: inline-block;
+      width: 80px;
+      font-weight: bold;
+    }
+    .edit-form input {
+      width: 200px;
+      padding: 5px;
     }
     body.dark-mode {
       background-color: #121212;
@@ -82,17 +110,23 @@
     .dark-mode .overdue {
       background-color: #884444;
     }
+    .dark-mode .edit-form {
+      background-color: #2a2a2a;
+      border-color: #007bff;
+    }
   </style>
 </head>
 <body>
   <h1>P들을 위한 To-Do List</h1>
   <button id="toggle-dark-mode">🌙 다크모드</button>
   <input type="text" id="search-input" placeholder="검색어 입력..." style="width:100%; padding: 8px; margin: 15px 0;">
+  
   <div class="sort-controls">
-    <button id="sort-by-date">기한이 가까운 순으로 정렬</button>
-    <button id="sort-by-date-desc">기한이 먼 순으로 정렬</button>
-    <button id="reset-sort">정렬 초기화</button>
+    <button id="sort-by-date" data-sort="asc">기한이 가까운 순으로 정렬</button>
+    <button id="sort-by-date-desc" data-sort="desc">기한이 먼 순으로 정렬</button>
+    <button id="reset-sort" data-sort="none">정렬 초기화</button>
   </div>
+  
   <form id="todo-form">
     <div>
       <label for="title">제목:</label>
@@ -117,29 +151,62 @@
     </div>
     <button type="submit">할 일 추가</button>
   </form>
+  
   <div id="todo-list"></div>
 
   <script>
     let allTodos = [];
+    let currentSort = 'none'; // 'none', 'asc', 'desc'
+
+    // 정렬 상태 업데이트
+    function updateSortButtons() {
+      document.querySelectorAll('.sort-controls button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      const activeButton = document.querySelector(`[data-sort="${currentSort}"]`);
+      if (activeButton) {
+        activeButton.classList.add('active');
+      }
+    }
 
     async function fetchTodos(sortByDate = false, ascending = true) {
-      const url = sortByDate 
-        ? `/todos?sort_by_date=true&ascending=${ascending}` 
-        : '/todos';
-      const response = await fetch(url);
-      const todos = await response.json();
-      allTodos = todos;
-      renderTodos(todos);
-      updateCategoryOptions(todos);
+      try {
+        const url = sortByDate 
+          ? `/todos?sort_by_date=true&ascending=${ascending}` 
+          : '/todos';
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const todos = await response.json();
+        allTodos = todos;
+        renderTodos(todos);
+        updateCategoryOptions(todos);
+        updateSortButtons();
+      } catch (error) {
+        console.error('Error fetching todos:', error);
+        alert('할 일 목록을 불러오는데 실패했습니다.');
+      }
     }
 
     function renderTodos(todos) {
       const todoList = document.getElementById('todo-list');
       todoList.innerHTML = '';
+      
+      if (todos.length === 0) {
+        todoList.innerHTML = '<p>등록된 할 일이 없습니다.</p>';
+        return;
+      }
+      
       todos.forEach(todo => {
         const todoItem = document.createElement('div');
         todoItem.className = 'todo-item';
         if (todo.completed) todoItem.classList.add('completed');
+        
+        // 날짜 계산 및 스타일 적용
         if (todo.due_date) {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -147,6 +214,7 @@
           dueDate.setHours(0, 0, 0, 0);
           const timeDiff = dueDate.getTime() - today.getTime();
           const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+          
           if (dayDiff < 0 && !todo.completed) {
             todoItem.classList.add('overdue');
           } else if (dayDiff <= 3 && !todo.completed) {
@@ -183,60 +251,32 @@
         const completeButton = document.createElement('button');
         completeButton.textContent = todo.completed ? '완료 취소' : '완료 처리';
         completeButton.onclick = async () => {
-          await fetch(`/todos/${todo.id}/complete`, { method: 'PUT' });
-          fetchTodos();
+          try {
+            const response = await fetch(`/todos/${todo.id}/complete`, { method: 'PUT' });
+            if (!response.ok) throw new Error('완료 상태 변경 실패');
+            await refreshCurrentView();
+          } catch (error) {
+            console.error('Error toggling complete:', error);
+            alert('완료 상태 변경에 실패했습니다.');
+          }
         };
 
         const editButton = document.createElement('button');
         editButton.textContent = '수정';
-        editButton.onclick = () => {
-          todoItem.innerHTML = '';
-          const form = document.createElement('form');
-          form.onsubmit = async (e) => {
-            e.preventDefault();
-            await fetch(`/todos/${todo.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id: todo.id,
-                title: form.elements.title.value,
-                description: form.elements.description.value,
-                location: form.elements.location.value || null,
-                category: form.elements.category.value || null,
-                due_date: form.elements.dueDate.value || null,
-                completed: todo.completed
-              })
-            });
-            fetchTodos(sortByDate, ascending);
-          };
-          const titleInput = document.createElement('div');
-          titleInput.innerHTML = `<label for="edit-title-${todo.id}">제목:</label><input type="text" name="title" id="edit-title-${todo.id}" value="${todo.title}" required>`;
-          const descInput = document.createElement('div');
-          descInput.innerHTML = `<label for="edit-desc-${todo.id}">설명:</label><input type="text" name="description" id="edit-desc-${todo.id}" value="${todo.description}" required>`;
-          const locationInput = document.createElement('div');
-          locationInput.innerHTML = `<label for="edit-location-${todo.id}">장소:</label><input type="text" name="location" id="edit-location-${todo.id}" value="${todo.location || ''}">`;
-          const categoryInput = document.createElement('div');
-          categoryInput.innerHTML = `<label for="edit-category-${todo.id}">카테고리:</label><input type="text" name="category" id="edit-category-${todo.id}" value="${todo.category || ''}">`;
-          const dateInput = document.createElement('div');
-          dateInput.innerHTML = `<label for="edit-date-${todo.id}">기한:</label><input type="date" name="dueDate" id="edit-date-${todo.id}" value="${todo.due_date || ''}">`;
-          const buttons = document.createElement('div');
-          buttons.innerHTML = `<button type="submit">저장</button><button type="button" id="cancel-edit-${todo.id}">취소</button>`;
-          buttons.querySelector(`#cancel-edit-${todo.id}`).onclick = () => fetchTodos(sortByDate, ascending);
-          form.appendChild(titleInput);
-          form.appendChild(descInput);
-          form.appendChild(locationInput);
-          form.appendChild(categoryInput);
-          form.appendChild(dateInput);
-          form.appendChild(buttons);
-          todoItem.appendChild(form);
-        };
+        editButton.onclick = () => showEditForm(todo, todoItem);
 
         const deleteButton = document.createElement('button');
         deleteButton.textContent = '삭제';
         deleteButton.onclick = async () => {
           if (confirm('정말 삭제하시겠습니까?')) {
-            await fetch(`/todos/${todo.id}`, { method: 'DELETE' });
-            fetchTodos();
+            try {
+              const response = await fetch(`/todos/${todo.id}`, { method: 'DELETE' });
+              if (!response.ok) throw new Error('삭제 실패');
+              await refreshCurrentView();
+            } catch (error) {
+              console.error('Error deleting todo:', error);
+              alert('삭제에 실패했습니다.');
+            }
           }
         };
 
@@ -253,6 +293,92 @@
 
         todoList.appendChild(todoItem);
       });
+    }
+
+    // 현재 정렬 상태에 따라 다시 불러오기
+    async function refreshCurrentView() {
+      switch(currentSort) {
+        case 'asc':
+          await fetchTodos(true, true);
+          break;
+        case 'desc':
+          await fetchTodos(true, false);
+          break;
+        default:
+          await fetchTodos(false);
+      }
+    }
+
+    // 수정 폼 표시
+    function showEditForm(todo, todoItem) {
+      todoItem.innerHTML = '';
+      
+      const form = document.createElement('form');
+      form.className = 'edit-form';
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        await updateTodo(todo.id, form);
+      };
+
+      form.innerHTML = `
+        <h4>할 일 수정</h4>
+        <div>
+          <label>제목:</label>
+          <input type="text" id="edit-title" value="${todo.title}" required>
+        </div>
+        <div>
+          <label>설명:</label>
+          <input type="text" id="edit-description" value="${todo.description}" required>
+        </div>
+        <div>
+          <label>장소:</label>
+          <input type="text" id="edit-location" value="${todo.location || ''}">
+        </div>
+        <div>
+          <label>카테고리:</label>
+          <input type="text" id="edit-category" value="${todo.category || ''}">
+        </div>
+        <div>
+          <label>기한:</label>
+          <input type="date" id="edit-due-date" value="${todo.due_date || ''}">
+        </div>
+        <div>
+          <button type="submit">저장</button>
+          <button type="button" onclick="refreshCurrentView()">취소</button>
+        </div>
+      `;
+      
+      todoItem.appendChild(form);
+    }
+
+    // 할 일 업데이트
+    async function updateTodo(todoId, form) {
+      try {
+        const updatedTodo = {
+          id: todoId,
+          title: form.querySelector('#edit-title').value,
+          description: form.querySelector('#edit-description').value,
+          location: form.querySelector('#edit-location').value || null,
+          category: form.querySelector('#edit-category').value || null,
+          due_date: form.querySelector('#edit-due-date').value || null,
+          completed: allTodos.find(t => t.id === todoId)?.completed || false
+        };
+
+        const response = await fetch(`/todos/${todoId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTodo)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        await refreshCurrentView();
+      } catch (error) {
+        console.error('Error updating todo:', error);
+        alert('수정에 실패했습니다.');
+      }
     }
 
     function updateCategoryOptions(todos) {
@@ -282,43 +408,77 @@
       renderTodos(filtered);
     }
 
+    // 새 할 일 추가
     document.getElementById('todo-form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      const title = document.getElementById('title').value;
-      const description = document.getElementById('description').value;
-      const location = document.getElementById('location').value;
-      const category = document.getElementById('category').value;
-      const dueDate = document.getElementById('due-date').value || null;
-      const response = await fetch('/todos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id: Date.now(), 
-          title, 
-          description, 
-          location,
-          category,
-          completed: false,
-          due_date: dueDate
-        })
-      });
-      if (response.ok) {
+      
+      try {
+        const title = document.getElementById('title').value;
+        const description = document.getElementById('description').value;
+        const location = document.getElementById('location').value;
+        const category = document.getElementById('category').value;
+        const dueDate = document.getElementById('due-date').value || null;
+        
+        const response = await fetch('/todos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            id: Date.now(), 
+            title, 
+            description, 
+            location: location || null,
+            category: category || null,
+            completed: false,
+            due_date: dueDate
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // 폼 초기화
         document.getElementById('title').value = '';
         document.getElementById('description').value = '';
         document.getElementById('location').value = '';
         document.getElementById('category').value = '';
         document.getElementById('due-date').value = '';
-        fetchTodos();
+        
+        await refreshCurrentView();
+      } catch (error) {
+        console.error('Error creating todo:', error);
+        alert('할 일 추가에 실패했습니다.');
       }
     });
 
-    document.getElementById('sort-by-date').addEventListener('click', () => fetchTodos(true, true));
-    document.getElementById('sort-by-date-desc').addEventListener('click', () => fetchTodos(true, false));
-    document.getElementById('reset-sort').addEventListener('click', () => fetchTodos(false));
+    // 정렬 버튼 이벤트
+    document.getElementById('sort-by-date').addEventListener('click', async () => {
+      currentSort = 'asc';
+      await fetchTodos(true, true);
+    });
 
+    document.getElementById('sort-by-date-desc').addEventListener('click', async () => {
+      currentSort = 'desc';
+      await fetchTodos(true, false);
+    });
+
+    document.getElementById('reset-sort').addEventListener('click', async () => {
+      currentSort = 'none';
+      await fetchTodos(false);
+    });
+
+    // 검색 기능
     document.getElementById('search-input').addEventListener('input', (e) => {
       const keyword = e.target.value;
       filterTodos(keyword);
+    });
+
+    // 다크모드 토글
+    document.getElementById('toggle-dark-mode').addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('darkMode', isDark);
+      updateDarkModeButtonText();
     });
 
     // 초기화
@@ -327,13 +487,7 @@
     }
     updateDarkModeButtonText();
 
-    document.getElementById('toggle-dark-mode').addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      const isDark = document.body.classList.contains('dark-mode');
-      localStorage.setItem('darkMode', isDark);
-      updateDarkModeButtonText();
-    });
-
+    // 앱 시작
     fetchTodos();
   </script>
 </body>
